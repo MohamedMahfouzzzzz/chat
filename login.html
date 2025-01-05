@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Dashboard Interface</title>
+  
+  <!-- Normalize CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+  
+  <!-- Google Fonts (Poppins) -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap">
+  
+  <!-- Ionicons (for icons) -->
+  <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  
+  <style>
+    /* General Reset */
+    * {
+        font-family: "Poppins", sans-serif;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Body Styling */
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: linear-gradient(135deg, #3e4684, #dde5f4);
+        margin: 0;
+    }
+
+    /* Login Container */
+    .login-container {
+        background: #ffffff;
+        padding: 2em;
+        border-radius: 20px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5em; /* Space between all child elements */
+        transition: transform 0.3s ease;
+    }
+
+    .login-container:hover {
+        transform: scale(1.01); /* Subtle hover effect */
+    }
+
+    .login-container h2 {
+        text-align: center;
+        color: #3e4684;
+        font-size: 1.8em;
+        font-weight: 700;
+    }
+
+    /* Form Fields */
+    .form-field {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2em; /* Increased space between inputs */
+    }
+
+    .form-field input {
+        border: 1px solid #dcdcdc;
+        border-radius: 12px;
+        padding: 0.9em;
+        font-size: 1em;
+        transition: all 0.3s ease;
+    }
+
+    .form-field input:focus {
+        border-color: #3e4684;
+        outline: none;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-field input::placeholder {
+        color: #888888;
+        font-size: 0.95em;
+    }
+
+    /* Login Button */
+    .login-container button {
+        padding: 14px;
+        background-color: #3e4684;
+        color: #ffffff;
+        border: none;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 1em;
+        cursor: pointer;
+        text-align: center;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .login-container button:hover {
+        background-color: #2c3566;
+        transform: translateY(-2px);
+    }
+
+    /* Google Login Button */
+    .google-login-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #db4437;
+        color: white;
+        padding: 14px;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 1em;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .google-login-btn ion-icon {
+        margin-right: 12px;
+        font-size: 1.2em;
+    }
+
+    .google-login-btn:hover {
+        background-color: #c33c29;
+        transform: translateY(-2px);
+    }
+
+    /* Error Message */
+    .error-message {
+        color: #ff1744;
+        text-align: center;
+        font-size: 0.9em;
+    }
+
+    /* Toggle Link */
+    .toggle-link {
+        text-align: center;
+        color: #3e4684;
+        font-size: 0.9em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: color 0.3s ease, text-decoration 0.3s ease;
+    }
+
+    .toggle-link:hover {
+        color: #2c3566;
+        text-decoration: underline;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 500px) {
+        .login-container {
+            padding: 1.5em;
+            border-radius: 15px;
+        }
+
+        .login-container h2 {
+            font-size: 1.5em;
+        }
+
+        .form-field input {
+            font-size: 0.9em;
+        }
+
+        .login-container button,
+        .google-login-btn {
+            font-size: 0.9em;
+        }
+    }
+</style>
+
+  
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+  <div class="login-container">
+    <h2 id="formTitle">Login</h2>
+    <div id="loginForm">
+      <div class="form-field">
+        <input type="email" id="loginEmail" placeholder="Email" required />
+      </div>
+      <div class="form-field">
+        <input type="password" id="loginPassword" placeholder="Password" required />
+      </div>
+      <button id="loginBtn">Login</button>
+      <div id="googleSignInBtn" class="google-login-btn">
+        <ion-icon name="logo-google"></ion-icon> Continue with Google
+      </div>
+    </div>
+    
+    <div id="signupForm" style="display: none;">
+      <div class="form-field">
+        <input type="text" id="signupUsername" placeholder="Username" required />
+      </div>
+      <div class="form-field">
+        <input type="text" id="signupFamilyName" placeholder="Family Name" required />
+      </div>
+      <div class="form-field">
+        <input type="email" id="signupEmail" placeholder="Email" required />
+      </div>
+      <div class="form-field">
+        <input type="password" id="signupPassword" placeholder="Password" required />
+      </div>
+      <button id="signupBtn">Sign Up</button>
+    </div>
+    <div class="error-message" id="errorMessage"></div>
+    <a id="toggleForm" class="toggle-link">Don't have an account? Sign up</a>
+  </div>
+
+  <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+  apiKey: "AIzaSyBV67s1bVA5mPUdRJDMYtg0QXAviHGj0LE",
+  authDomain: "chattest-fa7a1.firebaseapp.com",
+  projectId: "chattest-fa7a1",
+  storageBucket: "chattest-fa7a1.firebasestorage.app",
+  messagingSenderId: "124598075226",
+  appId: "1:124598075226:web:eb626080a09fd453283d63",
+  measurementId: "G-FFFY13W0DH"
+};
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    const loginForm = document.getElementById('loginForm');
+    const signupForm = document.getElementById('signupForm');
+    const formTitle = document.getElementById('formTitle');
+    const toggleForm = document.getElementById('toggleForm');
+    const errorMessage = document.getElementById('errorMessage');
+
+    toggleForm.addEventListener('click', () => {
+      if (loginForm.style.display === 'none') {
+        loginForm.style.display = 'block';
+        signupForm.style.display = 'none';
+        formTitle.textContent = 'Login';
+        toggleForm.textContent = "Don't have an account? Sign up";
+      } else {
+        loginForm.style.display = 'none';
+        signupForm.style.display = 'block';
+        formTitle.textContent = 'Sign Up';
+        toggleForm.textContent = 'Already have an account? Login';
+      }
+      errorMessage.textContent = '';
+    });
+
+    document.getElementById('loginBtn').addEventListener('click', () => {
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      errorMessage.textContent = '';
+
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+          window.location.href = 'index.html';
+        })
+        .catch(error => {
+          errorMessage.textContent = error.message;
+        });
+    });
+
+    document.getElementById('signupBtn').addEventListener('click', () => {
+      const username = document.getElementById('signupUsername').value;
+      const familyName = document.getElementById('signupFamilyName').value;
+      const email = document.getElementById('signupEmail').value;
+      const password = document.getElementById('signupPassword').value;
+      errorMessage.textContent = '';
+
+      auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          // Save username and family name (custom logic, e.g., Firebase database)
+          console.log('User signed up:', username, familyName);
+          window.location.href = 'index.html';
+        })
+        .catch(error => {
+          errorMessage.textContent = error.message;
+        });
+    });
+
+    document.getElementById('googleSignInBtn').addEventListener('click', () => {
+  const provider = new firebase.auth.GoogleAuthProvider();
+
+  auth.signInWithPopup(provider)
+    .then((result) => {
+      // The signed-in user info.
+      const user = result.user;
+      console.log('Google Sign-In successful:', user);
+      window.location.href = 'index.html'; // Redirect on success
+    })
+    .catch((error) => {
+      console.error('Error during Google Sign-In:', error.message);
+      errorMessage.textContent = error.message; // Display error message
+    });
+});
+
+  </script>
+</body>
+</html>
+

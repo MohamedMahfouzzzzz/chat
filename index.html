@@ -1,54 +1,1025 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-  <title>Chat App</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <div class="wrapper">
-    <!-- Users Section -->
-    <section class="users">
-      <header>
-        <h2>Welcome, <span id="welcome-name">User</span>!</h2>
-        <button id="logout-btn" aria-label="Logout">Logout</button>
-      </header>
-      <div class="search">
-        <input type="text" placeholder="Search users" aria-label="Search users">
-        <button type="submit" aria-label="Search"><i class="fa fa-search"></i></button>
-      </div>
-      <ul class="users-list">
-        <!-- Loading placeholder -->
-        <li>Loading users...</li>
-      </ul>
-    </section>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Secure Admin Chat</title>
+    <style>
+      :root {
+        --primary: #4361ee;
+        --admin: #4cc9f0;
+        --user: #f72585;
+        --system: #7209b7;
+        --warning: #f94144;
+        --success: #43aa8b;
+        --bg: #f8f9fa;
+        --text: #212529;
+        --border: #dee2e6;
+      }
 
-    <!-- Chat Section -->
-    <section class="chat">
-      <header>
-        <div class="user-details">
-          <span class="user-name">Chat with: <span id="chatting-user-name">No one</span></span>
-        </div>
-      </header>
-      <div class="chat-box">
-        <!-- Placeholder message -->
-        <p>No messages yet. Start a conversation!</p>
-      </div>
-      <div id="reaction-menu" class="reaction-menu">
-        <button class="reaction" data-reaction="👍" aria-label="Thumbs Up" onclick="addReaction('👍')">👍</button>
-        <button class="reaction" data-reaction="❤️" aria-label="Heart" onclick="addReaction('❤️')">❤️</button>
-        <button class="reaction" data-reaction="😂" aria-label="Laugh" onclick="addReaction('😂')">😂</button>
-        <button class="reaction" data-reaction="😮" aria-label="Surprise" onclick="addReaction('😮')">😮</button>
-      </div>
-      <div class="send-message">
-        <input type="text" class="input-message" placeholder="Type a message" aria-label="Type a message">
-        <button id="send-btn" aria-label="Send message">Send</button>
-      </div>
-    </section>
-  </div>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-  <script type="module" src="chat.js"></script>
-</body>
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: var(--bg);
+        color: var(--text);
+        line-height: 1.5;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .user-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .avatar {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+      }
+
+      .chat-container {
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        height: 60vh;
+        overflow-y: auto;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background-color: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .message {
+        max-width: 80%;
+        padding: 0.75rem 1rem;
+        border-radius: 1rem;
+        word-break: break-word;
+        position: relative;
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .sent {
+        align-self: flex-end;
+        background-color: var(--primary);
+        color: white;
+        border-bottom-right-radius: 0.25rem;
+      }
+
+      .received {
+        align-self: flex-start;
+        background-color: #e9ecef;
+        border-bottom-left-radius: 0.25rem;
+      }
+
+      .admin-msg {
+        align-self: center;
+        background-color: var(--admin);
+        color: white;
+        font-weight: 600;
+        text-align: center;
+      }
+
+      .system-msg {
+        align-self: center;
+        background-color: var(--system);
+        color: white;
+        font-size: 0.9em;
+        padding: 0.5rem 0.75rem;
+      }
+
+      .warning-msg {
+        align-self: center;
+        background-color: var(--warning);
+        color: white;
+        font-size: 0.9em;
+        padding: 0.5rem 0.75rem;
+      }
+
+      .success-msg {
+        align-self: center;
+        background-color: var(--success);
+        color: white;
+        font-size: 0.9em;
+        padding: 0.5rem 0.75rem;
+      }
+
+      .message-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.25rem;
+        font-weight: 600;
+        font-size: 0.85em;
+      }
+
+      .message-avatar {
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7em;
+        font-weight: bold;
+      }
+
+      .timestamp {
+        font-size: 0.7em;
+        opacity: 0.8;
+        margin-top: 0.25rem;
+        text-align: right;
+      }
+
+      .input-area {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1rem;
+      }
+
+      #message-input {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border-radius: 1.5rem;
+        border: 1px solid var(--border);
+        font-size: 1rem;
+        transition: all 0.2s;
+      }
+
+      #message-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+      }
+
+      .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 1.5rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .btn-primary {
+        background-color: var(--primary);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background-color: #3a56d4;
+        transform: translateY(-1px);
+      }
+
+      .btn-admin {
+        background-color: var(--admin);
+        color: white;
+      }
+
+      .btn-admin:hover {
+        background-color: #3ab0d4;
+      }
+
+      .btn-warning {
+        background-color: var(--warning);
+        color: white;
+      }
+
+      .btn-warning:hover {
+        background-color: #d62a2d;
+      }
+
+      .admin-panel {
+        background-color: rgba(76, 201, 240, 0.1);
+        border: 1px solid var(--admin);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        display: none;
+      }
+
+      .admin-panel h3 {
+        margin-bottom: 0.75rem;
+        color: var(--admin);
+      }
+
+      .admin-controls {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      .auth-panel {
+        background-color: rgba(114, 9, 183, 0.1);
+        border: 1px solid var(--system);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .auth-panel h3 {
+        margin-bottom: 0.75rem;
+        color: var(--system);
+      }
+
+      .auth-form {
+        display: flex;
+        gap: 0.75rem;
+      }
+
+      .auth-form input {
+        flex: 1;
+        padding: 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+      }
+
+      .status-message {
+        margin-top: 0.5rem;
+        font-size: 0.9em;
+      }
+
+      .typing-indicator {
+        font-size: 0.8em;
+        color: #6c757d;
+        font-style: italic;
+        height: 1em;
+        margin-left: 0.5rem;
+      }
+
+      @media (max-width: 600px) {
+        .auth-form,
+        .input-area {
+          flex-direction: column;
+        }
+
+        .btn {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1 style="color: var(--primary)">Secure Admin Chat</h1>
+      <div class="user-badge">
+        <div id="user-avatar" class="avatar"></div>
+        <div id="user-name"></div>
+      </div>
+    </header>
+
+    <div class="auth-panel">
+      <h3>Admin Authentication</h3>
+      <div class="auth-form">
+        <input
+          type="password"
+          id="admin-password"
+          placeholder="Enter admin password"
+          autocomplete="current-password"
+        />
+        <button id="login-btn" class="btn btn-primary">Login</button>
+      </div>
+    </div>
+
+    <div class="admin-panel">
+      <h3>Admin Controls</h3>
+      <div class="admin-controls">
+        <button id="logout-btn" class="btn btn-warning">Logout</button>
+        <button id="broadcast-btn" class="btn btn-admin">Broadcast</button>
+        <button id="clear-chat-btn" class="btn btn-admin">Clear Chat</button>
+        <button id="kick-users-btn" class="btn btn-admin">Kick Inactive</button>
+      </div>
+      <div id="admin-status" class="status-message"></div>
+    </div>
+
+    <div class="chat-container" id="chat-container"></div>
+
+    <div class="input-area">
+      <input
+        type="text"
+        id="message-input"
+        placeholder="Type your message..."
+        autocomplete="off"
+      />
+      <button id="send-button" class="btn btn-primary">Send</button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+      const _0x1fe284 = _0x55c7;
+      (function (_0xe4839b, _0x3c5d0a) {
+        const _0x39d4e3 = _0x55c7,
+          _0x177126 = _0xe4839b();
+        while (!![]) {
+          try {
+            const _0x326583 =
+              parseInt(_0x39d4e3(0x162)) / 0x1 +
+              (parseInt(_0x39d4e3(0x1cd)) / 0x2) *
+                (parseInt(_0x39d4e3(0x1a6)) / 0x3) +
+              -parseInt(_0x39d4e3(0x1cc)) / 0x4 +
+              parseInt(_0x39d4e3(0x1be)) / 0x5 +
+              -parseInt(_0x39d4e3(0x13f)) / 0x6 +
+              parseInt(_0x39d4e3(0x184)) / 0x7 +
+              (parseInt(_0x39d4e3(0x156)) / 0x8) *
+                (-parseInt(_0x39d4e3(0x181)) / 0x9);
+            if (_0x326583 === _0x3c5d0a) break;
+            else _0x177126["push"](_0x177126["shift"]());
+          } catch (_0x152ed9) {
+            _0x177126["push"](_0x177126["shift"]());
+          }
+        }
+      })(_0x33e8, 0x46fd0);
+      const firebaseConfig = {
+        apiKey: "AIzaSyA6z1AvVVkY5645_Mr6UedUXJen7zpyoVc",
+        authDomain: "hackermessi12.firebaseapp.com",
+        projectId: "hackermessi12",
+        storageBucket: _0x1fe284(0x168),
+        messagingSenderId: _0x1fe284(0x1b6),
+        appId: _0x1fe284(0x1b1),
+        measurementId: _0x1fe284(0x170),
+      };
+      firebase[_0x1fe284(0x187)](firebaseConfig);
+      function _0x55c7(_0x42ed88, _0x5d127d) {
+        const _0x33e88c = _0x33e8();
+        return (
+          (_0x55c7 = function (_0x55c7d7, _0x4a562e) {
+            _0x55c7d7 = _0x55c7d7 - 0x13e;
+            let _0x15d6e8 = _0x33e88c[_0x55c7d7];
+            return _0x15d6e8;
+          }),
+          _0x55c7(_0x42ed88, _0x5d127d)
+        );
+      }
+      const database = firebase["database"](),
+        ADMIN_PASSWORD = _0x1fe284(0x19d),
+        INACTIVITY_TIMEOUT = 0x493e0,
+        PRESENCE_CHECK_INTERVAL = 0x7530;
+      let isAdmin = ![],
+        currentAdminId = null,
+        lastActivityTime = Date[_0x1fe284(0x159)](),
+        activeUsers = {};
+      const userId = generateId(),
+        userName = generateName(),
+        userColor = generateColor(),
+        elements = {
+          chatContainer: document[_0x1fe284(0x154)](_0x1fe284(0x197)),
+          messageInput: document[_0x1fe284(0x154)](_0x1fe284(0x17e)),
+          sendButton: document[_0x1fe284(0x154)]("send-button"),
+          userAvatar: document[_0x1fe284(0x154)](_0x1fe284(0x167)),
+          userName: document[_0x1fe284(0x154)](_0x1fe284(0x174)),
+          adminPanel: document["querySelector"](_0x1fe284(0x15f)),
+          authPanel: document[_0x1fe284(0x1b7)](".auth-panel"),
+          adminPassword: document[_0x1fe284(0x154)](_0x1fe284(0x17d)),
+          loginBtn: document["getElementById"](_0x1fe284(0x18c)),
+          logoutBtn: document[_0x1fe284(0x154)](_0x1fe284(0x189)),
+          broadcastBtn: document[_0x1fe284(0x154)](_0x1fe284(0x166)),
+          clearChatBtn: document[_0x1fe284(0x154)](_0x1fe284(0x143)),
+          kickUsersBtn: document[_0x1fe284(0x154)](_0x1fe284(0x1a0)),
+          loginMessage: document[_0x1fe284(0x154)](_0x1fe284(0x141)),
+          adminStatus: document[_0x1fe284(0x154)](_0x1fe284(0x144)),
+        };
+      function initUI() {
+        const _0x4a8144 = _0x1fe284;
+        (elements[_0x4a8144(0x161)][_0x4a8144(0x1c3)] =
+          userName[_0x4a8144(0x198)](0x0)[_0x4a8144(0x157)]()),
+          (elements[_0x4a8144(0x161)][_0x4a8144(0x15b)][_0x4a8144(0x155)] =
+            userColor),
+          (elements["userName"][_0x4a8144(0x1c3)] = userName),
+          document[_0x4a8144(0x1c0)](_0x4a8144(0x1c5), updateActivity),
+          document[_0x4a8144(0x1c0)](_0x4a8144(0x179), updateActivity),
+          setInterval(checkPresence, PRESENCE_CHECK_INTERVAL),
+          elements[_0x4a8144(0x149)][_0x4a8144(0x17f)]();
+      }
+      function generateId() {
+        const _0x2074d0 = _0x1fe284;
+        return (
+          _0x2074d0(0x175) +
+          Math[_0x2074d0(0x194)]()
+            [_0x2074d0(0x1b5)](0x24)
+            [_0x2074d0(0x17b)](0x2, 0x9) +
+          "_" +
+          Date[_0x2074d0(0x159)]()["toString"](0x24)
+        );
+      }
+      function generateName() {
+        const _0x16fa09 = _0x1fe284,
+          _0x5e3c95 = [
+            _0x16fa09(0x1a3),
+            _0x16fa09(0x1c1),
+            _0x16fa09(0x1cb),
+            _0x16fa09(0x145),
+            _0x16fa09(0x17c),
+            _0x16fa09(0x18a),
+          ],
+          _0x5be398 = [
+            "Phoenix",
+            _0x16fa09(0x1b4),
+            _0x16fa09(0x1ce),
+            "Eagle",
+            _0x16fa09(0x185),
+            _0x16fa09(0x19e),
+          ];
+        return (
+          "" +
+          _0x5e3c95[
+            Math["floor"](
+              Math[_0x16fa09(0x194)]() * _0x5e3c95[_0x16fa09(0x172)]
+            )
+          ] +
+          _0x5be398[
+            Math[_0x16fa09(0x148)](
+              Math[_0x16fa09(0x194)]() * _0x5be398["length"]
+            )
+          ]
+        );
+      }
+      function generateColor() {
+        const _0x48bedf = _0x1fe284,
+          _0x5f4bab = [
+            _0x48bedf(0x199),
+            _0x48bedf(0x150),
+            _0x48bedf(0x16c),
+            "#4361ee",
+            _0x48bedf(0x1b8),
+            _0x48bedf(0x13e),
+          ];
+        return _0x5f4bab[
+          Math[_0x48bedf(0x148)](
+            Math[_0x48bedf(0x194)]() * _0x5f4bab[_0x48bedf(0x172)]
+          )
+        ];
+      }
+      function addMessage(_0x339157, _0x3c6b73, _0x45be02, _0x565729 = {}) {
+        const _0x948736 = _0x1fe284,
+          _0x576277 = document[_0x948736(0x177)]("div");
+        _0x576277["classList"][_0x948736(0x173)](_0x948736(0x1c9));
+        if (_0x565729["isSystem"])
+          _0x576277[_0x948736(0x18e)][_0x948736(0x173)]("system-msg");
+        else {
+          if (_0x565729["isAdmin"])
+            _0x576277[_0x948736(0x18e)]["add"]("admin-msg");
+          else {
+            if (_0x565729[_0x948736(0x19b)])
+              _0x576277[_0x948736(0x18e)][_0x948736(0x173)](_0x948736(0x18b));
+            else {
+              if (_0x565729[_0x948736(0x193)])
+                _0x576277[_0x948736(0x18e)][_0x948736(0x173)](_0x948736(0x15a));
+              else {
+                if (_0x3c6b73 === userId)
+                  _0x576277[_0x948736(0x18e)][_0x948736(0x173)](
+                    _0x948736(0x1bc)
+                  );
+                else
+                  _0x576277[_0x948736(0x18e)][_0x948736(0x173)](
+                    _0x948736(0x1ba)
+                  );
+              }
+            }
+          }
+        }
+        if (
+          !_0x565729[_0x948736(0x165)] &&
+          !_0x565729[_0x948736(0x19b)] &&
+          !_0x565729[_0x948736(0x193)]
+        ) {
+          const _0x27382d = document[_0x948736(0x177)](_0x948736(0x180));
+          _0x27382d[_0x948736(0x18e)][_0x948736(0x173)](_0x948736(0x169));
+          const _0x102f59 = document[_0x948736(0x177)](_0x948736(0x180));
+          _0x102f59["classList"][_0x948736(0x173)](_0x948736(0x1d0)),
+            (_0x102f59[_0x948736(0x1c3)] =
+              _0x45be02[_0x948736(0x198)](0x0)[_0x948736(0x157)]()),
+            (_0x102f59["style"][_0x948736(0x155)] =
+              _0x565729[_0x948736(0x1c4)] || "#ccc"),
+            _0x27382d[_0x948736(0x142)](_0x102f59),
+            _0x27382d[_0x948736(0x142)](
+              document[_0x948736(0x147)](
+                _0x565729[_0x948736(0x14a)]
+                  ? _0x45be02 + _0x948736(0x16f)
+                  : _0x45be02
+              )
+            ),
+            _0x576277[_0x948736(0x142)](_0x27382d);
+        }
+        const _0x33af6f = document[_0x948736(0x177)]("div");
+        (_0x33af6f[_0x948736(0x1c3)] = _0x339157),
+          _0x576277[_0x948736(0x142)](_0x33af6f);
+        const _0x5b7cb5 = document[_0x948736(0x177)]("div");
+        _0x5b7cb5[_0x948736(0x18e)]["add"](_0x948736(0x1a1)),
+          (_0x5b7cb5[_0x948736(0x1c3)] = formatTime(
+            _0x565729[_0x948736(0x1a1)] || Date[_0x948736(0x159)]()
+          )),
+          _0x576277[_0x948736(0x142)](_0x5b7cb5),
+          elements["chatContainer"]["appendChild"](_0x576277),
+          (elements[_0x948736(0x152)][_0x948736(0x186)] =
+            elements[_0x948736(0x152)][_0x948736(0x1bf)]);
+      }
+      function formatTime(_0x2d5c82) {
+        const _0x9a14e3 = _0x1fe284;
+        return new Date(_0x2d5c82)["toLocaleTimeString"]([], {
+          hour: _0x9a14e3(0x16a),
+          minute: _0x9a14e3(0x16a),
+          second: _0x9a14e3(0x16a),
+        });
+      }
+      function _0x33e8() {
+        const _0x4d4155 = [
+          "adminPassword",
+          "Incorrect\x20admin\x20password",
+          "\x20has\x20become\x20admin",
+          "var(--warning)",
+          "1:611175945540:web:71204ac5442ea722ad3311",
+          "senderName",
+          "value",
+          "Wolf",
+          "toString",
+          "611175945540",
+          "querySelector",
+          "#4cc9f0",
+          "clearChatBtn",
+          "received",
+          "Welcome\x20",
+          "sent",
+          "text",
+          "482505BYUEzn",
+          "scrollHeight",
+          "addEventListener",
+          "Clever",
+          "messages",
+          "textContent",
+          "senderColor",
+          "mousemove",
+          "display",
+          "Chat\x20was\x20cleared\x20by\x20admin",
+          "forEach",
+          "message",
+          "val",
+          "Brave",
+          "1684304UZyDEf",
+          "370718nrojrD",
+          "Dragon",
+          "admin/activity",
+          "message-avatar",
+          "broadcastBtn",
+          "#4895ef",
+          "707904MNudNM",
+          "Warning:\x20Multiple\x20admin\x20sessions\x20detected!",
+          "login-message",
+          "appendChild",
+          "clear-chat-btn",
+          "admin-status",
+          "Gentle",
+          "adminPanel",
+          "createTextNode",
+          "floor",
+          "messageInput",
+          "isAdmin",
+          "set",
+          "var(--success)",
+          "kickUsersBtn",
+          "once",
+          "admin/activity/",
+          "#7209b7",
+          "ref",
+          "chatContainer",
+          "entries",
+          "getElementById",
+          "backgroundColor",
+          "12760sCppXY",
+          "toUpperCase",
+          "Admin\x20login\x20successful",
+          "now",
+          "success-msg",
+          "style",
+          "values",
+          "Admin\x20kicked\x20inactive\x20users:\x20",
+          "none",
+          ".admin-panel",
+          "lastActive",
+          "userAvatar",
+          "343583BdxTyI",
+          "Automatically\x20removed\x20inactive\x20users:\x20",
+          "loginBtn",
+          "isSystem",
+          "broadcast-btn",
+          "user-avatar",
+          "hackermessi12.firebasestorage.app",
+          "message-header",
+          "2-digit",
+          "remove",
+          "#3a0ca3",
+          "Enter",
+          "innerHTML",
+          "\x20(Admin)",
+          "G-ERTJTBC1HK",
+          "logoutBtn",
+          "length",
+          "add",
+          "user-name",
+          "usr_",
+          "admin",
+          "createElement",
+          "adminStatus",
+          "keypress",
+          "Failed\x20to\x20clear\x20chat:\x20",
+          "substr",
+          "Witty",
+          "admin-password",
+          "message-input",
+          "focus",
+          "div",
+          "135vtsMAM",
+          "admin/current",
+          "catch",
+          "1598170DGkhfy",
+          "Lion",
+          "scrollTop",
+          "initializeApp",
+          "authPanel",
+          "logout-btn",
+          "Noble",
+          "warning-msg",
+          "login-btn",
+          "key",
+          "classList",
+          "join",
+          "child_added",
+          "click",
+          "Are\x20you\x20sure\x20you\x20want\x20to\x20clear\x20the\x20entire\x20chat\x20history?",
+          "isSuccess",
+          "random",
+          "update",
+          "Enter\x20broadcast\x20message\x20to\x20all\x20users:",
+          "chat-container",
+          "charAt",
+          "#f72585",
+          "users",
+          "isWarning",
+          "name",
+          "admin123",
+          "Owl",
+          "color",
+          "kick-users-btn",
+          "timestamp",
+          "child",
+          "Swift",
+          "Another\x20admin\x20is\x20already\x20active",
+          "Admin\x20session\x20active",
+          "3koDGss",
+          "userName",
+          "trim",
+          "then",
+          "loginMessage",
+          "push",
+          "You\x20were\x20logged\x20out\x20as\x20admin\x20because\x20another\x20user\x20became\x20admin",
+        ];
+        _0x33e8 = function () {
+          return _0x4d4155;
+        };
+        return _0x33e8();
+      }
+      function sendMessage() {
+        const _0x362fc8 = _0x1fe284,
+          _0x12eb98 =
+            elements[_0x362fc8(0x149)][_0x362fc8(0x1b3)][_0x362fc8(0x1a8)]();
+        if (!_0x12eb98) return;
+        const _0x4098d6 = Date[_0x362fc8(0x159)]();
+        updateActivity();
+        if (isAdmin && _0x12eb98["startsWith"]("/admin\x20")) {
+          const _0x141336 = _0x12eb98["substring"](0x7);
+          database[_0x362fc8(0x151)]("messages")["push"]({
+            text: _0x141336,
+            sender: userId,
+            senderName: userName,
+            senderColor: userColor,
+            isAdmin: !![],
+            timestamp: _0x4098d6,
+          });
+        } else
+          database["ref"](_0x362fc8(0x1c2))[_0x362fc8(0x1ab)]({
+            text: _0x12eb98,
+            sender: userId,
+            senderName: userName,
+            senderColor: userColor,
+            timestamp: _0x4098d6,
+          });
+        elements[_0x362fc8(0x149)][_0x362fc8(0x1b3)] = "";
+      }
+      function updateActivity() {
+        const _0x524d26 = _0x1fe284;
+        (lastActivityTime = Date["now"]()),
+          isAdmin &&
+            database["ref"](_0x524d26(0x14f) + userId)[_0x524d26(0x14b)](
+              lastActivityTime
+            );
+      }
+      function checkPresence() {
+        const _0x193edc = _0x1fe284,
+          _0x2a0e59 = Date["now"]();
+        database[_0x193edc(0x151)](_0x193edc(0x19a))
+          [_0x193edc(0x1a2)](userId)
+          [_0x193edc(0x14b)]({
+            name: userName,
+            lastActive: _0x2a0e59,
+            color: userColor,
+          }),
+          isAdmin &&
+            database[_0x193edc(0x151)]("users")
+              [_0x193edc(0x14e)](_0x193edc(0x1b3))
+              [_0x193edc(0x1a9)]((_0x49cbab) => {
+                const _0x368b62 = _0x193edc,
+                  _0x5ba8db = _0x49cbab[_0x368b62(0x1ca)]() || {},
+                  _0x8063f9 = [];
+                Object["entries"](_0x5ba8db)["forEach"](
+                  ([_0xae4842, _0x5dfb45]) => {
+                    const _0x3c6cdf = _0x368b62;
+                    _0x2a0e59 - _0x5dfb45[_0x3c6cdf(0x160)] >
+                      INACTIVITY_TIMEOUT &&
+                      (_0x8063f9[_0x3c6cdf(0x1ab)](_0x5dfb45[_0x3c6cdf(0x19c)]),
+                      database[_0x3c6cdf(0x151)](_0x3c6cdf(0x19a))
+                        ["child"](_0xae4842)
+                        ["remove"]());
+                  }
+                ),
+                  _0x8063f9[_0x368b62(0x172)] > 0x0 &&
+                    addSystemMessage(
+                      _0x368b62(0x163) + _0x8063f9[_0x368b62(0x18f)](",\x20")
+                    );
+              });
+      }
+      function activateAdmin() {
+        const _0x30513c = _0x1fe284;
+        if (currentAdminId && currentAdminId !== userId)
+          return showLoginMessage(_0x30513c(0x1a4), !![]), ![];
+        return (
+          (isAdmin = !![]),
+          (currentAdminId = userId),
+          database["ref"](_0x30513c(0x176))[_0x30513c(0x195)]({
+            current: userId,
+            activity: { [userId]: Date[_0x30513c(0x159)]() },
+          }),
+          (elements[_0x30513c(0x146)][_0x30513c(0x15b)][_0x30513c(0x1c6)] =
+            "block"),
+          (elements[_0x30513c(0x188)][_0x30513c(0x15b)][_0x30513c(0x1c6)] =
+            _0x30513c(0x15e)),
+          (elements[_0x30513c(0x161)]["style"]["backgroundColor"] =
+            _0x30513c(0x1b8)),
+          (elements[_0x30513c(0x1a7)][_0x30513c(0x16e)] =
+            userName +
+            "\x20<span\x20style=\x22color:#4cc9f0;\x22>(Admin)</span>"),
+          addSystemMessage(userName + _0x30513c(0x1af)),
+          setInterval(() => {
+            const _0x48dab7 = _0x30513c;
+            isAdmin &&
+              database["ref"](_0x48dab7(0x14f) + userId)[_0x48dab7(0x14b)](
+                Date[_0x48dab7(0x159)]()
+              );
+          }, PRESENCE_CHECK_INTERVAL),
+          !![]
+        );
+      }
+      function deactivateAdmin() {
+        const _0x68332c = _0x1fe284;
+        (isAdmin = ![]),
+          currentAdminId === userId &&
+            database[_0x68332c(0x151)](_0x68332c(0x182))[_0x68332c(0x16b)](),
+          (elements["adminPanel"][_0x68332c(0x15b)][_0x68332c(0x1c6)] =
+            _0x68332c(0x15e)),
+          (elements[_0x68332c(0x188)][_0x68332c(0x15b)][_0x68332c(0x1c6)] =
+            "block"),
+          (elements[_0x68332c(0x161)][_0x68332c(0x15b)][_0x68332c(0x155)] =
+            userColor),
+          (elements[_0x68332c(0x1a7)][_0x68332c(0x1c3)] = userName),
+          addSystemMessage(userName + "\x20has\x20left\x20admin\x20session");
+      }
+      function addSystemMessage(_0x92a032, _0x1e98ee = ![], _0x40ecc3 = ![]) {
+        const _0x516693 = _0x1fe284;
+        database[_0x516693(0x151)](_0x516693(0x1c2))[_0x516693(0x1ab)]({
+          text: _0x92a032,
+          sender: "system",
+          senderName: "System",
+          isSystem: !![],
+          isWarning: _0x1e98ee,
+          isSuccess: _0x40ecc3,
+          timestamp: Date[_0x516693(0x159)](),
+        });
+      }
+      function clearChat() {
+        const _0x5b62db = _0x1fe284;
+        if (!isAdmin || !confirm(_0x5b62db(0x192))) return;
+        database[_0x5b62db(0x151)](_0x5b62db(0x1c2))
+          ["remove"]()
+          [_0x5b62db(0x1a9)](() => {
+            const _0x5b2d4d = _0x5b62db;
+            addSystemMessage(_0x5b2d4d(0x1c7));
+          })
+          [_0x5b62db(0x183)]((_0x13e5b0) => {
+            const _0x11a0b0 = _0x5b62db;
+            addSystemMessage(_0x11a0b0(0x17a) + _0x13e5b0["message"], !![]);
+          });
+      }
+      function kickInactiveUsers() {
+        const _0x3fd5a5 = _0x1fe284;
+        if (!isAdmin) return;
+        database[_0x3fd5a5(0x151)](_0x3fd5a5(0x19a))
+          [_0x3fd5a5(0x14e)]("value")
+          ["then"]((_0x538825) => {
+            const _0x56b8e4 = _0x3fd5a5,
+              _0x1d0e29 = _0x538825["val"]() || {},
+              _0x2e10f7 = Date[_0x56b8e4(0x159)](),
+              _0x6ecb2b = [];
+            Object[_0x56b8e4(0x153)](_0x1d0e29)[_0x56b8e4(0x1c8)](
+              ([_0x5ece2e, _0x3fae33]) => {
+                const _0x4abd5a = _0x56b8e4;
+                _0x5ece2e !== userId &&
+                  _0x2e10f7 - _0x3fae33[_0x4abd5a(0x160)] >
+                    INACTIVITY_TIMEOUT &&
+                  (_0x6ecb2b[_0x4abd5a(0x1ab)](_0x3fae33[_0x4abd5a(0x19c)]),
+                  database[_0x4abd5a(0x151)](_0x4abd5a(0x19a))
+                    [_0x4abd5a(0x1a2)](_0x5ece2e)
+                    [_0x4abd5a(0x16b)]());
+              }
+            ),
+              _0x6ecb2b[_0x56b8e4(0x172)] > 0x0
+                ? addSystemMessage(
+                    _0x56b8e4(0x15d) + _0x6ecb2b[_0x56b8e4(0x18f)](",\x20")
+                  )
+                : addSystemMessage(
+                    "No\x20inactive\x20users\x20to\x20kick",
+                    ![],
+                    !![]
+                  );
+          });
+      }
+      function showLoginMessage(_0x1423ba, _0x4b4ed2 = ![]) {
+        const _0x4366b9 = _0x1fe284;
+        (elements[_0x4366b9(0x1aa)][_0x4366b9(0x1c3)] = _0x1423ba),
+          (elements["loginMessage"][_0x4366b9(0x15b)]["color"] = _0x4b4ed2
+            ? _0x4366b9(0x1b0)
+            : "var(--success)");
+      }
+      function initEventListeners() {
+        const _0xd0c0a = _0x1fe284;
+        elements["sendButton"][_0xd0c0a(0x1c0)](_0xd0c0a(0x191), sendMessage),
+          elements[_0xd0c0a(0x149)][_0xd0c0a(0x1c0)](
+            _0xd0c0a(0x179),
+            (_0x2a8e80) => {
+              const _0x26cf79 = _0xd0c0a;
+              if (_0x2a8e80[_0x26cf79(0x18d)] === _0x26cf79(0x16d))
+                sendMessage();
+            }
+          ),
+          elements["loginBtn"][_0xd0c0a(0x1c0)](_0xd0c0a(0x191), () => {
+            const _0x438f9c = _0xd0c0a;
+            elements[_0x438f9c(0x1ad)][_0x438f9c(0x1b3)] === ADMIN_PASSWORD
+              ? activateAdmin() &&
+                (showLoginMessage(_0x438f9c(0x158), ![]),
+                (elements["adminPassword"][_0x438f9c(0x1b3)] = ""))
+              : showLoginMessage(_0x438f9c(0x1ae), !![]);
+          }),
+          elements[_0xd0c0a(0x171)][_0xd0c0a(0x1c0)](
+            _0xd0c0a(0x191),
+            deactivateAdmin
+          ),
+          elements[_0xd0c0a(0x1d1)][_0xd0c0a(0x1c0)](_0xd0c0a(0x191), () => {
+            const _0xc1d4c8 = _0xd0c0a,
+              _0x117d87 = prompt(_0xc1d4c8(0x196));
+            _0x117d87 &&
+              database[_0xc1d4c8(0x151)]("messages")["push"]({
+                text: _0x117d87,
+                sender: userId,
+                senderName: userName,
+                isAdmin: !![],
+                timestamp: Date["now"](),
+              });
+          }),
+          elements[_0xd0c0a(0x1b9)][_0xd0c0a(0x1c0)]("click", clearChat),
+          elements[_0xd0c0a(0x14d)][_0xd0c0a(0x1c0)](
+            "click",
+            kickInactiveUsers
+          ),
+          elements[_0xd0c0a(0x1ad)][_0xd0c0a(0x1c0)](
+            "keypress",
+            (_0x66bdcc) => {
+              const _0x5f3245 = _0xd0c0a;
+              if (_0x66bdcc["key"] === "Enter")
+                elements[_0x5f3245(0x164)]["click"]();
+            }
+          );
+      }
+      function initFirebaseListeners() {
+        const _0x47fddc = _0x1fe284;
+        database[_0x47fddc(0x151)](_0x47fddc(0x1c2))["on"](
+          _0x47fddc(0x190),
+          (_0x46dc2c) => {
+            const _0x59b03f = _0x47fddc,
+              _0x3b3339 = _0x46dc2c["val"]();
+            addMessage(
+              _0x3b3339[_0x59b03f(0x1bd)],
+              _0x3b3339["sender"],
+              _0x3b3339[_0x59b03f(0x1b2)],
+              {
+                isAdmin: _0x3b3339[_0x59b03f(0x14a)],
+                isSystem: _0x3b3339[_0x59b03f(0x165)],
+                isWarning: _0x3b3339[_0x59b03f(0x19b)],
+                isSuccess: _0x3b3339[_0x59b03f(0x193)],
+                senderColor: _0x3b3339[_0x59b03f(0x1c4)],
+                timestamp: _0x3b3339[_0x59b03f(0x1a1)],
+              }
+            );
+          }
+        ),
+          database["ref"](_0x47fddc(0x182))["on"](
+            _0x47fddc(0x1b3),
+            (_0x1a5da1) => {
+              const _0x44e949 = _0x47fddc;
+              currentAdminId = _0x1a5da1[_0x44e949(0x1ca)]();
+              if (currentAdminId === userId && !isAdmin) activateAdmin();
+              else
+                currentAdminId &&
+                  currentAdminId !== userId &&
+                  isAdmin &&
+                  (deactivateAdmin(), addSystemMessage(_0x44e949(0x1ac), !![]));
+            }
+          ),
+          database["ref"](_0x47fddc(0x1cf))["on"](
+            _0x47fddc(0x1b3),
+            (_0x23854a) => {
+              const _0x44621b = _0x47fddc;
+              if (!isAdmin) return;
+              const _0x32ea0c = _0x23854a[_0x44621b(0x1ca)]() || {},
+                _0x5053c4 = Date[_0x44621b(0x159)]();
+              let _0xbdb2f2 = 0x0;
+              Object[_0x44621b(0x15c)](_0x32ea0c)["forEach"]((_0x463de8) => {
+                _0x5053c4 - _0x463de8 < PRESENCE_CHECK_INTERVAL * 0x2 &&
+                  _0xbdb2f2++;
+              }),
+                _0xbdb2f2 > 0x1
+                  ? ((elements[_0x44621b(0x178)][_0x44621b(0x1c3)] =
+                      _0x44621b(0x140)),
+                    (elements["adminStatus"]["style"][_0x44621b(0x19f)] =
+                      _0x44621b(0x1b0)))
+                  : ((elements[_0x44621b(0x178)][_0x44621b(0x1c3)] =
+                      _0x44621b(0x1a5)),
+                    (elements["adminStatus"][_0x44621b(0x15b)]["color"] =
+                      _0x44621b(0x14c)));
+            }
+          );
+      }
+      function init() {
+        const _0x4b97bc = _0x1fe284;
+        initUI(),
+          initEventListeners(),
+          initFirebaseListeners(),
+          database["ref"]("admin/current")
+            [_0x4b97bc(0x14e)]("value")
+            ["then"]((_0x2c3d08) => {
+              const _0x3a850c = _0x4b97bc;
+              (currentAdminId = _0x2c3d08[_0x3a850c(0x1ca)]()),
+                currentAdminId === userId && activateAdmin();
+            }),
+          addSystemMessage(
+            _0x4b97bc(0x1bb) +
+              userName +
+              "!\x20This\x20chat\x20supports\x20exclusive\x20admin\x20access."
+          );
+      }
+      init();
+    </script>
+  </body>
 </html>
